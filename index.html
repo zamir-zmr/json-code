@@ -87,6 +87,31 @@
 
         .admin-only { display: none !important; }
         .admin-mode .admin-only { display: inline-flex !important; }
+        
+       header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    /* Safe area padding for mobile notches */
+    padding-top: calc(10px + env(safe-area-inset-top)); 
+    background: var(--glass);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    height: auto; /* Fixed height ki jagah auto use karein safe area ke liye */
+    min-height: 65px;
+    z-index: 1000; /* Ensure it stays on top */
+    position: sticky; /* Fixed se better sticky kaam karta hai Chrome mobile par */
+    top: 0;
+    width: 100%;
+}
+
+/* Body par padding zaroori hai taaki content header ke peeche na chhupay */
+body {
+    padding-top: env(safe-area-inset-top);
+}
+ 
+        
+        
     </style>
 </head>
 <body class="guest-mode">
