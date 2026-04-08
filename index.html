@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DevDash Pro | Multi-User Access</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+            --folder: #fbbf24;
+            --card: #1e293b;
+            --glass: rgba(30, 41, 59, 0.9);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; background: var(--glass);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            height: 65px; z-index: 100;
+        }
+
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-info i { color: var(--accent); font-size: 1.4rem; }
+        .user-details div:first-child { font-size: 0.7rem; opacity: 0.6; }
+        .user-details div:last-child { font-weight: bold; font-size: 0.9rem; }
+
+        .container { flex: 1; position: relative; overflow: hidden; }
+        .sidebar { width: 100%; height: 100%; display: flex; flex-direction: column; background: #0f172a; }
+
+        .list-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .item-list { overflow-y: auto; flex: 1; padding-bottom: 150px; }
+
+        .list-item { 
+            padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); 
+            display: flex; align-items: center; gap: 15px; cursor: pointer;
+        }
+
+        .tab-switcher { 
+            position: absolute; bottom: 90px; left: 20px; right: 20px;
+            display: flex; background: var(--card); padding: 5px;
+            border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 50;
+        }
+        .tab-btn { flex: 1; padding: 12px; background: none; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 0.8rem; }
+        .tab-btn.active { background: var(--accent); color: #000; }
+
+        .main-content { 
+            position: absolute; inset: 0; background: var(--bg);
+            transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column; padding: 20px; z-index: 200;
+        }
+        .show-editor .main-content { transform: translateX(0); }
+
+        #titleDisplay { background: transparent; border: none; border-bottom: 2px solid var(--accent); color: white; font-size: 1.3rem; width: 100%; padding: 10px 0; outline: none; margin-bottom: 15px; }
+        textarea#contentDisplay { flex: 1; background: var(--card); border-radius: 12px; padding: 15px; color: #cbd5e1; font-family: monospace; resize: none; border: 1px solid #334155; font-size: 0.95rem; outline: none; }
+
+        #folderView { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; }
+        .folder-icon { font-size: 6rem; color: var(--folder); margin-bottom: 20px; }
+
+        .btn { padding: 10px 18px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--accent); color: #000; }
+
+        /* MODALS */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
+        .modal-card { background: var(--card); padding: 30px; border-radius: 20px; width: 85%; max-width: 340px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 0.75rem; margin-bottom: 5px; opacity: 0.6; margin-left: 5px; }
+        .modal input { width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 10px; outline: none; }
+
+        .admin-only { display: none !important; }
+        .admin-mode .admin-only { display: inline-flex !important; }
+        .admin-mode .guest-only { display: none !important; }
+    </style>
+</head>
+<body class="guest-mode">
+
+    <div id="loginModal" class="modal">
+        <div class="modal-card">
+            <h2 style="margin-bottom:25px;">Staff Access</h2>
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="userInput" placeholder="Zamir or Samir">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="passInput" placeholder="****">
+            </div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; padding:15px; margin-top:10px;" onclick="handleLogin()">Login</button>
+            <p onclick="closeModals()" style="margin-top:20px; color:var(--accent); font-size:0.8rem; cursor:pointer;">Cancel</p>
+        </div>
+    </div>
+
+    <div id="logoutModal" class="modal">
+        <div class="modal-card">
+            <div style="font-size:3rem; color:#ef4444; margin-bottom:15px;"><i class="fa-solid fa-power-off"></i></div>
+            <h3 style="margin-bottom:10px;">Logout?</h3>
+            <p style="opacity: 0.6; font-size: 0.9rem; margin-bottom: 25px;">Are you sure you want to end your session?</p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="flex:1; background:#334155; color:white; justify-content:center;" onclick="closeModals()">Back</button>
+                <button class="btn" style="flex:1; background:#ef4444; color:white; justify-content:center;" onclick="confirmLogout()">Yes, Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="user-info">
+            <i class="fa-solid fa-circle-user"></i>
+            <div class="user-details">
+                <div>Account</div>
+                <div id="headerName">Guest Mode</div>
+            </div>
+        </div>
+        <button id="authBtn" class="btn btn-primary" style="padding:8px 15px; font-size:0.75rem;" onclick="openLogin()">Login</button>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="list-header">
+                <span id="tabTitle" style="font-weight:bold; color:var(--accent); font-size:0.9rem;">JSON STORAGE</span>
+                <div class="admin-only">
+                    <input type="file" id="jsonInput" style="display:none" onchange="handleUpload(event)">
+                    <button class="btn btn-primary" id="addBtn" onclick="actionTrigger()"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+            <div id="itemList" class="item-list"></div>
+            
+            <div class="tab-switcher">
+                <button id="tNotes" class="tab-btn" onclick="switchTab('notes')">NOTES</button>
+                <button id="tJson" class="tab-btn active" onclick="switchTab('json')">FOLDERS</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <button class="btn btn-primary" onclick="closeEditor()"><i class="fa-solid fa-arrow-left"></i></button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn guest-only" style="background:#475569; color:white;" onclick="copyToClipboard()"><i class="fa-solid fa-copy"></i></button>
+                    <button class="btn admin-only" style="background:#ef4444; color:white;" onclick="deleteItem()"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn btn-primary admin-only" onclick="saveToFirebase()">Save to Cloud</button>
+                </div>
+            </div>
+            <input type="text" id="titleDisplay" placeholder="Title">
+            <textarea id="contentDisplay" placeholder="Type content here..."></textarea>
+            <div id="folderView">
+                <div class="folder-icon"><i class="fa-solid fa-folder-open"></i></div>
+                <h3 id="fnLabel" style="margin-bottom: 25px;">filename.json</h3>
+                <button class="btn" style="background: #22c55e; color:white; width: 100%; justify-content: center; height: 55px;" onclick="downloadFile()">
+                    <i class="fa-solid fa-download"></i> SAVE TO FILE MANAGER
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3bsKfP7CxS0Sb0CY6xu_vFogVcxbJCII",
+            authDomain: "ashcostingapp.firebaseapp.com",
+            databaseURL: "https://ashcostingapp-default-rtdb.firebaseio.com",
+            projectId: "ashcostingapp"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let currentMode = 'json', currentId = null, isAdmin = false;
+
+        // User Data
+        const users = {
+            "zamir": "123",
+            "samir": "123"
+        };
+
+        window.onload = () => {
+            const savedUser = localStorage.getItem('loggedUser');
+            if(savedUser) setAdminMode(savedUser);
+            switchTab('json');
+        };
+
+        function openLogin() { document.getElementById('loginModal').style.display='flex'; }
+        function openLogout() { document.getElementById('logoutModal').style.display='flex'; }
+        function closeModals() { 
+            document.getElementById('loginModal').style.display='none'; 
+            document.getElementById('logoutModal').style.display='none'; 
+        }
+        
+        function handleLogin() {
+            const u = document.getElementById('userInput').value.toLowerCase().trim();
+            const p = document.getElementById('passInput').value;
+
+            if(users[u] && users[u] === p) {
+                localStorage.setItem('loggedUser', u);
+                setAdminMode(u); 
+                closeModals();
+            } else {
+                alert("Incorrect Username or Password");
+            }
+        }
+
+        function setAdminMode(username) {
+            isAdmin = true;
+            document.body.classList.remove('guest-mode');
+            document.body.classList.add('admin-mode');
+            document.getElementById('headerName').innerText = username.charAt(0).toUpperCase() + username.slice(1);
+            document.getElementById('authBtn').innerText = "Logout";
+            document.getElementById('authBtn').onclick = openLogout;
+            switchTab(currentMode);
+        }
+
+        function confirmLogout() {
+            localStorage.removeItem('loggedUser');
+            location.reload();
+        }
+
+        function switchTab(mode) {
+            currentMode = mode;
+            document.getElementById('tabTitle').innerText = mode === 'json' ? 'JSON FILES' : 'NOTES';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(mode === 'json' ? 'tJson' : 'tNotes').classList.add('active');
+            
+            const btn = document.getElementById('addBtn');
+            btn.innerHTML = mode === 'json' ? '<i class="fa-solid fa-cloud-arrow-up"></i>' : '<i class="fa-solid fa-plus"></i>';
+            loadData();
+        }
+
+        function actionTrigger() {
+            if(currentMode === 'json') document.getElementById('jsonInput').click();
+            else openEditor(null, {title: '', content: ''});
+        }
+
+        function loadData() {
+            db.ref(currentMode).on('value', snap => {
+                const list = document.getElementById('itemList');
+                list.innerHTML = "";
+                snap.forEach(child => {
+                    const data = child.val();
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    const icon = currentMode === 'json' ? 'fa-folder' : 'fa-file-lines';
+                    div.innerHTML = `<i class="fa-solid ${icon}" style="color:${currentMode === 'json' ? 'var(--folder)' : 'var(--accent)'}"></i> <span>${data.title}</span>`;
+                    div.onclick = () => openEditor(child.key, data);
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        function openEditor(id, data) {
+            currentId = id;
+            document.getElementById('titleDisplay').value = data.title;
+            document.getElementById('contentDisplay').value = data.content;
+            document.getElementById('fnLabel').innerText = data.title + ".json";
+            
+            if(currentMode === 'json' && !isAdmin) {
+                document.getElementById('contentDisplay').style.display = 'none';
+                document.getElementById('folderView').style.display = 'flex';
+            } else {
+                document.getElementById('contentDisplay').style.display = 'block';
+                document.getElementById('folderView').style.display = 'none';
+            }
+            document.body.classList.add('show-editor');
+        }
+
+        function handleUpload(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (res) => openEditor(null, {title: file.name.replace('.json',''), content: res.target.result});
+            reader.readAsText(file);
+        }
+
+        function saveToFirebase() {
+            const t = document.getElementById('titleDisplay').value;
+            const c = document.getElementById('contentDisplay').value;
+            if(!t) return alert("Title required");
+            const ref = currentId ? db.ref(`${currentMode}/${currentId}`) : db.ref(currentMode).push();
+            ref.set({title: t, content: c}).then(() => { alert("Done!"); closeEditor(); });
+        }
+
+        function deleteItem() {
+            if(currentId && confirm("Delete?")) db.ref(`${currentMode}/${currentId}`).remove().then(() => closeEditor());
+        }
+
+        function downloadFile() {
+            const blob = new Blob([document.getElementById('contentDisplay').value], {type:'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = document.getElementById('titleDisplay').value + ".json";
+            a.click();
+        }
+
+        function copyToClipboard() {
+            document.getElementById('contentDisplay').select();
+            document.execCommand('copy');
+            alert("Copied!");
+        }
+
+        function closeEditor() { document.body.classList.remove('show-editor'); }
+    </script>
+</body>
+</html>
