@@ -193,7 +193,7 @@
         };
 
         function openLogin() { document.getElementById('loginModal').style.display='flex'; }
-        function openLogout() { document.getElementById('logoutModal').style.display='flex'; }
+        function openLogout() { document.getElementById('logoutModal').style.display='none'; }
         function closeModals() { document.getElementById('loginModal').style.display='none'; document.getElementById('logoutModal').style.display='none'; }
         
         function handleLogin() {
@@ -290,18 +290,26 @@
             document.getElementById('fnLabel').innerText = data.title + ".json";
             
             // Layout Logic
-            if(currentMode === 'json' && !isAdmin) {
-                // JSON Mode (Guest): Show folder view, hide editor
-                document.getElementById('contentDisplay').style.display = 'none';
-                document.getElementById('folderView').style.display = 'flex';
+            if(currentMode === 'json') {
+                // JSON Mode: Hide Copy Icon, Show Download Icon (based on Admin status or folder view)
                 document.getElementById('copyBtn').style.display = 'none';
-                document.getElementById('mainDownloadBtn').style.display = 'none';
+                
+                if(!isAdmin) {
+                    document.getElementById('contentDisplay').style.display = 'none';
+                    document.getElementById('folderView').style.display = 'flex';
+                    document.getElementById('mainDownloadBtn').style.display = 'none';
+                } else {
+                    document.getElementById('contentDisplay').style.display = 'block';
+                    document.getElementById('folderView').style.display = 'none';
+                    document.getElementById('mainDownloadBtn').style.display = 'flex';
+                }
             } else {
-                // Notes Mode or Admin: Show editor and buttons
+                // Notes Mode: Hide Download Icon, Show Copy Icon
+                document.getElementById('mainDownloadBtn').style.display = 'none';
+                document.getElementById('copyBtn').style.display = 'flex';
+                
                 document.getElementById('contentDisplay').style.display = 'block';
                 document.getElementById('folderView').style.display = 'none';
-                document.getElementById('copyBtn').style.display = 'flex';
-                document.getElementById('mainDownloadBtn').style.display = 'flex';
             }
             document.body.classList.add('show-editor');
         }
@@ -354,4 +362,3 @@
     </script>
 </body>
 </html>
-
