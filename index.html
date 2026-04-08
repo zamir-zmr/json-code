@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>DevDash Pro | Verified List</title>
+    <title>zmr-code-json</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -91,17 +91,31 @@
 </head>
 <body class="guest-mode">
 
-    <div id="toast">Copied Successfully! <i class="fa-solid fa-check-double"></i></div>
+    <div id="toast">Copied Successfully! </div>
 
     <div id="loginModal" class="modal">
         <div class="modal-card">
-            <h2 style="margin-bottom:25px;"><i class="fa-solid fa-shield-halved" style="color:var(--accent)"></i> Staff Access</h2>
+            <h2 style="margin-bottom:25px;"><i class="fa-solid fa-shield-halved" style="color:var(--accent)"></i> Admin Access</h2>
             <input type="text" id="userInput" placeholder="Username">
             <input type="password" id="passInput" placeholder="Password">
             <button class="btn btn-primary" style="width:100%; justify-content:center; padding:15px;" onclick="handleLogin()">Login Now</button>
             <p onclick="closeModals()" style="margin-top:20px; color:var(--accent); cursor:pointer; font-size:0.8rem;">Go Back</p>
         </div>
     </div>
+
+<div id="deniedModal" class="modal">
+    <div class="modal-card" style="border: 2px solid #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);">
+        <div style="font-size: 3.5rem; color: #ef4444; margin-bottom: 15px;">
+            <i class="fa-solid fa-shield-xmark"></i>
+        </div>
+        <h2 style="color: #ef4444; margin-bottom: 10px;">ACCESS DENIED</h2>
+        <p style="color: #94a3b8; margin-bottom: 25px;">Invalid</p>
+        <button class="btn" style="width: 100%; background: #ef4444; color: white; justify-content: center; font-weight: bold;" onclick="closeDeniedModal()">
+            TRY AGAIN
+        </button>
+    </div>
+</div>
+
 
     <div id="logoutModal" class="modal">
         <div class="modal-card">
@@ -113,6 +127,27 @@
             </div>
         </div>
     </div>
+    
+    <div id="deleteModal" class="modal">
+    <div class="modal-card" style="border: 1px solid rgba(239, 68, 68, 0.3);">
+        <div style="font-size: 3.5rem; color: #ef4444; margin-bottom: 15px;">
+            <i class="fa-solid fa-trash-can-arrow-up"></i>
+        </div>
+        <h3 style="color: white; margin-bottom: 10px; font-size: 1.4rem;">Confirm Delete?</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 25px;">
+            Are you sure you want to permanently delete this item?
+        </p>
+        <div style="display: flex; gap: 12px;">
+            <button class="btn" style="flex: 1; background: #334155; color: white; justify-content: center;" onclick="closeDeleteModal()">
+                CANCEL
+            </button>
+            <button class="btn" style="flex: 1; background: #ef4444; color: white; justify-content: center;" onclick="confirmDeleteAction()">
+                DELETE
+            </button>
+        </div>
+    </div>
+</div>
+
 
     <header>
         <div class="user-info">
@@ -192,19 +227,45 @@
             switchTab('notes');
         };
 
-        function openLogin() { document.getElementById('loginModal').style.display='flex'; }
-        function openLogout() { document.getElementById('logoutModal').style.display='none'; }
-        function closeModals() { document.getElementById('loginModal').style.display='none'; document.getElementById('logoutModal').style.display='none'; }
+// Modal ko open aur close karne ka sahi logic
+function openLogin() { 
+    document.getElementById('loginModal').style.display = 'flex'; 
+}
+
+function openLogout() { 
+    // Yahan galti thi, 'none' ki jagah 'flex' hona chahiye
+    document.getElementById('logoutModal').style.display = 'flex'; 
+}
+
+function closeModals() { 
+    document.getElementById('loginModal').style.display = 'none'; 
+    document.getElementById('logoutModal').style.display = 'none'; 
+}
+
+
+
         
-        function handleLogin() {
-            const u = document.getElementById('userInput').value.toLowerCase().trim();
-            const p = document.getElementById('passInput').value;
-            if(users[u] === p) { 
-                localStorage.setItem('loggedUser', u); 
-                setAdminMode(u); 
-                closeModals(); 
-            } else alert("Invalid username or password");
-        }
+function handleLogin() {
+    const u = document.getElementById('userInput').value.toLowerCase().trim();
+    const p = document.getElementById('passInput').value;
+
+    if (users[u] === p) {
+        localStorage.setItem('loggedUser', u);
+        setAdminMode(u);
+        closeModals();
+        showToast("Login Successful", "success");
+    } else {
+        // Purana alert hata kar naya modal open karein
+        document.getElementById('loginModal').style.display = 'none'; // Login modal band karein
+        document.getElementById('deniedModal').style.display = 'flex'; // Denied modal dikhayein
+    }
+}
+
+// Denied modal band karke wapas login par jaane ke liye
+function closeDeniedModal() {
+    document.getElementById('deniedModal').style.display = 'none';
+    document.getElementById('loginModal').style.display = 'flex';
+}
 
         function setAdminMode(username) {
             isAdmin = true; currentUsername = username;
@@ -227,16 +288,28 @@
             loadData();
         }
 
-        function getFormattedDate() {
-            const now = new Date();
-            const d = String(now.getDate()).padStart(2, '0');
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const y = now.getFullYear();
-            const h = String(now.getHours()).padStart(2, '0');
-            const min = String(now.getMinutes()).padStart(2, '0');
-            const s = String(now.getSeconds()).padStart(2, '0');
-            return `[${d}-${m}-${y}] [${h}:${min}:${s}]`;
-        }
+function getFormattedDate() {
+    const now = new Date();
+    
+    // Date components
+    const d = String(now.getDate()).padStart(2, '0');
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const y = now.getFullYear();
+    
+    // Time components
+    let h = now.getHours();
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    
+    // AM/PM Logic
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12; // '0' baje ko '12' mein badalne ke liye
+    const hDisplay = String(h).padStart(2, '0');
+
+    // Return Format: [08-04-2026] [11:34:05 PM]
+    return `${d}/${m}/${y}   ${hDisplay}:${min}:${s} ${ampm}`;
+}
 
         function loadData() {
             db.ref(currentMode).on('value', snap => {
@@ -313,12 +386,19 @@
             }
             document.body.classList.add('show-editor');
         }
+        
+function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    // msg variable ko use karna zaroori hai
+    toast.innerHTML = `${msg} <i class="fa-solid ${type === 'success' ? 'fa-check-double' : 'fa-circle-exclamation'}"></i>`;
+    toast.style.background = type === 'success' ? 'var(--success)' : '#ef4444';
+    toast.style.display = 'block';
+    
+    setTimeout(() => { 
+        toast.style.display = 'none'; 
+    }, 2000);
+}
 
-        function showToast() {
-            const toast = document.getElementById('toast');
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 2000);
-        }
 
         function saveToFirebase() {
             const t = document.getElementById('titleDisplay').value;
@@ -340,7 +420,44 @@
             reader.readAsText(file);
         }
 
-        function deleteItem() { if(currentId && confirm("Delete?")) db.ref(`${currentMode}/${currentId}`).remove().then(() => closeEditor()); }
+// Jab koi Trash icon par click karega
+function deleteItem() {
+    if (!currentId) return;
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+// Modal band karne ke liye
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+// Final Delete karne ke liye
+function confirmDeleteAction() {
+    if (currentId) {
+        db.ref(`${currentMode}/${currentId}`).remove()
+            .then(() => {
+                closeDeleteModal();
+                closeEditor();
+                showToast("Item Deleted Successfully", "error"); // Red toast dikhane ke liye
+            })
+            .catch((error) => {
+                console.error("Delete failed: ", error);
+            });
+    }
+}
+
+function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `${msg} <i class="fa-solid ${type === 'success' ? '' : 'fa-trash-can'}"></i>`;
+    toast.style.background = type === 'success' ? 'var(--success)' : '#ef4444';
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 2000);
+}
+
+
+        
+        
+        
         
         function downloadFile() {
             const text = document.getElementById('contentDisplay').value;
@@ -352,12 +469,22 @@
             a.click();
         }
 
-        function copyToClipboard() { 
-            const text = document.getElementById('contentDisplay').value;
-            navigator.clipboard.writeText(text).then(() => {
-                showToast();
-            });
-        }
+function copyToClipboard() { 
+    const text = document.getElementById('contentDisplay').value;
+    if (!text) {
+        showToast("Nothing to copy!", "error");
+        return;
+    }
+    
+    navigator.clipboard.writeText(text).then(() => {
+        // Yahan "Copied Successfully" message add kiya gaya hai
+        showToast("Copied Successfully", "success");
+    }).catch(() => {
+        showToast("Copy Failed", "error");
+    });
+}
+
+
         function closeEditor() { document.body.classList.remove('show-editor'); }
     </script>
 </body>
