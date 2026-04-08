@@ -219,7 +219,11 @@
         const db = firebase.database();
 
         let currentMode = 'json', currentId = null, isAdmin = false, currentUsername = '';
-        const users = { "zamir": "123", "ash": "123" };
+        const users = { 
+          "zamir": "123",
+          "ash": "123",
+          "aisha": "123"
+        };
 
         window.onload = () => {
             const savedUser = localStorage.getItem('loggedUser');
