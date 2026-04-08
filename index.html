@@ -219,11 +219,12 @@
         const db = firebase.database();
 
         let currentMode = 'json', currentId = null, isAdmin = false, currentUsername = '';
-        const users = { 
+        const users = 
+        { 
           "zamir": "123",
           "ash": "123",
           "aisha": "123"
-        };
+          };
 
         window.onload = () => {
             const savedUser = localStorage.getItem('loggedUser');
@@ -391,17 +392,7 @@ function getFormattedDate() {
             document.body.classList.add('show-editor');
         }
         
-function showToast(msg, type = 'success') {
-    const toast = document.getElementById('toast');
-    // msg variable ko use karna zaroori hai
-    toast.innerHTML = `${msg} <i class="fa-solid ${type === 'success' ? 'fa-check-double' : 'fa-circle-exclamation'}"></i>`;
-    toast.style.background = type === 'success' ? 'var(--success)' : '#ef4444';
-    toast.style.display = 'block';
-    
-    setTimeout(() => { 
-        toast.style.display = 'none'; 
-    }, 2000);
-}
+
 
 
         function saveToFirebase() {
@@ -442,7 +433,7 @@ function confirmDeleteAction() {
             .then(() => {
                 closeDeleteModal();
                 closeEditor();
-                showToast("Item Deleted Successfully", "error"); // Red toast dikhane ke liye
+                showToast("Deleted Successfully", "error"); // Red toast dikhane ke liye
             })
             .catch((error) => {
                 console.error("Delete failed: ", error);
@@ -452,7 +443,7 @@ function confirmDeleteAction() {
 
 function showToast(msg, type = 'success') {
     const toast = document.getElementById('toast');
-    toast.innerHTML = `${msg} <i class="fa-solid ${type === 'success' ? '' : 'fa-trash-can'}"></i>`;
+    toast.innerHTML = `${msg} <i class="fa-solid ${type === 'success' ? '' : ''}"></i>`;
     toast.style.background = type === 'success' ? 'var(--success)' : '#ef4444';
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 2000);
