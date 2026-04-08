@@ -15,11 +15,20 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--glass); border-bottom: 1px solid rgba(255,255,255,0.1); height: 65px; z-index: 100; }
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px 15px; background: var(--glass); 
+            border-bottom: 1px solid rgba(255,255,255,0.1); height: 65px; z-index: 100; 
+        }
+        
         .user-info { display: flex; align-items: center; gap: 10px; }
-        .user-info i { color: var(--accent); font-size: 1.4rem; }
+        .user-info i { color: var(--accent); font-size: 1.6rem; }
         .user-details div:first-child { font-size: 0.7rem; opacity: 0.6; }
         .user-details div:last-child { font-weight: bold; font-size: 0.9rem; }
+
+        .logout-btn { color: #ef4444; font-size: 1.4rem; cursor: pointer; padding: 5px; display: none; }
+        .admin-mode .logout-btn { display: block; }
+        .admin-mode #authBtn { display: none; }
 
         .container { flex: 1; position: relative; overflow: hidden; }
         .sidebar { width: 100%; height: 100%; display: flex; flex-direction: column; background: #0f172a; }
@@ -27,7 +36,6 @@
         .list-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         .item-list { overflow-y: auto; flex: 1; padding-bottom: 150px; }
 
-        /* UPDATED LIST ITEM WITH GREEN INFO */
         .list-item { 
             padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); 
             display: flex; align-items: center; justify-content: space-between; cursor: pointer;
@@ -66,33 +74,62 @@
         .btn { padding: 10px 18px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .btn-primary { background: var(--accent); color: #000; }
 
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--success); color: white; padding: 12px 25px;
+            border-radius: 50px; font-size: 0.9rem; font-weight: bold;
+            display: none; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
         .modal-card { background: var(--card); padding: 30px; border-radius: 20px; width: 85%; max-width: 340px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
         .modal input { width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 10px; margin-bottom: 15px; outline: none; }
 
         .admin-only { display: none !important; }
         .admin-mode .admin-only { display: inline-flex !important; }
-        .admin-mode .guest-only { display: none !important; }
     </style>
 </head>
 <body class="guest-mode">
 
+    <div id="toast">Copied Successfully! <i class="fa-solid fa-check-double"></i></div>
+
     <div id="loginModal" class="modal">
         <div class="modal-card">
-            <h2 style="margin-bottom:25px;">Staff Access</h2>
+            <h2 style="margin-bottom:25px;"><i class="fa-solid fa-shield-halved" style="color:var(--accent)"></i> Staff Access</h2>
             <input type="text" id="userInput" placeholder="Username">
             <input type="password" id="passInput" placeholder="Password">
-            <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="handleLogin()">Login</button>
-            <p onclick="closeModals()" style="margin-top:20px; color:var(--accent); cursor:pointer;">Cancel</p>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; padding:15px;" onclick="handleLogin()">Login Now</button>
+            <p onclick="closeModals()" style="margin-top:20px; color:var(--accent); cursor:pointer; font-size:0.8rem;">Go Back</p>
+        </div>
+    </div>
+
+    <div id="logoutModal" class="modal">
+        <div class="modal-card">
+            <div style="font-size:3rem; color:#ef4444; margin-bottom:15px;"><i class="fa-solid fa-power-off"></i></div>
+            <h3 style="margin-bottom:25px;">Log out now?</h3>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="flex:1; background:#334155; color:white; justify-content:center;" onclick="closeModals()">No</button>
+                <button class="btn" style="flex:1; background:#ef4444; color:white; justify-content:center;" onclick="confirmLogout()">Yes, Logout</button>
+            </div>
         </div>
     </div>
 
     <header>
         <div class="user-info">
             <i class="fa-solid fa-circle-user"></i>
-            <div class="user-details"><div>Account</div><div id="headerName">Guest Mode</div></div>
+            <div class="user-details">
+                <div>Account</div>
+                <div id="headerName">Guest Mode</div>
+            </div>
         </div>
-        <button id="authBtn" class="btn btn-primary" style="padding:8px 15px;" onclick="openLogin()">Login</button>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button id="authBtn" class="btn btn-primary" style="padding:8px 15px; font-size:0.75rem;" onclick="openLogin()">
+                <i class="fa-solid fa-right-to-bracket"></i> Login
+            </button>
+            <div class="logout-btn" onclick="openLogout()">
+                <i class="fa-solid fa-power-off"></i>
+            </div>
+        </div>
     </header>
 
     <div class="container">
@@ -115,17 +152,25 @@
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <button class="btn btn-primary" onclick="closeEditor()"><i class="fa-solid fa-arrow-left"></i></button>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn guest-only" style="background:#475569; color:white;" onclick="copyToClipboard()"><i class="fa-solid fa-copy"></i></button>
+                    <button id="mainDownloadBtn" class="btn" style="background:#22c55e; color:white;" onclick="downloadFile()">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button id="copyBtn" class="btn" style="background:#475569; color:white;" onclick="copyToClipboard()">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
                     <button class="btn admin-only" style="background:#ef4444; color:white;" onclick="deleteItem()"><i class="fa-solid fa-trash"></i></button>
                     <button class="btn btn-primary admin-only" onclick="saveToFirebase()">Save Cloud</button>
                 </div>
             </div>
             <input type="text" id="titleDisplay" placeholder="Title">
             <textarea id="contentDisplay" placeholder="Content..."></textarea>
+            
             <div id="folderView">
                 <div class="folder-icon"><i class="fa-solid fa-folder-open"></i></div>
                 <h3 id="fnLabel" style="margin-bottom: 25px;">file.json</h3>
-                <button class="btn" style="background: #22c55e; color:white; width: 100%; justify-content: center; height: 55px;" onclick="downloadFile()">DOWNLOAD</button>
+                <button class="btn" style="background: #22c55e; color:white; width: 100%; justify-content: center; height: 55px;" onclick="downloadFile()">
+                    <i class="fa-solid fa-download"></i> DOWNLOAD
+                </button>
             </div>
         </main>
     </div>
@@ -139,29 +184,39 @@
         const db = firebase.database();
 
         let currentMode = 'json', currentId = null, isAdmin = false, currentUsername = '';
-        const users = { "zamir": "123", "samir": "123" };
+        const users = { "zamir": "123", "ash": "123" };
 
         window.onload = () => {
             const savedUser = localStorage.getItem('loggedUser');
             if(savedUser) setAdminMode(savedUser);
-            switchTab('json');
+            switchTab('notes');
         };
 
         function openLogin() { document.getElementById('loginModal').style.display='flex'; }
-        function closeModals() { document.getElementById('loginModal').style.display='none'; }
+        function openLogout() { document.getElementById('logoutModal').style.display='flex'; }
+        function closeModals() { document.getElementById('loginModal').style.display='none'; document.getElementById('logoutModal').style.display='none'; }
         
         function handleLogin() {
             const u = document.getElementById('userInput').value.toLowerCase().trim();
             const p = document.getElementById('passInput').value;
-            if(users[u] === p) { localStorage.setItem('loggedUser', u); setAdminMode(u); closeModals(); } else alert("Error");
+            if(users[u] === p) { 
+                localStorage.setItem('loggedUser', u); 
+                setAdminMode(u); 
+                closeModals(); 
+            } else alert("Invalid username or password");
         }
 
         function setAdminMode(username) {
             isAdmin = true; currentUsername = username;
-            document.body.classList.remove('guest-mode'); document.body.classList.add('admin-mode');
+            document.body.classList.remove('guest-mode'); 
+            document.body.classList.add('admin-mode');
             document.getElementById('headerName').innerText = username.toUpperCase();
-            document.getElementById('authBtn').style.display = 'none';
             switchTab(currentMode);
+        }
+
+        function confirmLogout() {
+            localStorage.removeItem('loggedUser');
+            location.reload();
         }
 
         function switchTab(mode) {
@@ -194,7 +249,6 @@
                     const icon = currentMode === 'json' ? 'fa-folder' : 'fa-file-lines';
                     const tickStatus = data.isMarked ? 'is-verified' : 'not-verified';
                     
-                    // List mein hi details add kar di hain
                     let markedDetail = "";
                     if(data.isMarked && data.lastMarkedBy) {
                         markedDetail = `<div class="marked-detail">Last Marked by: ${data.lastMarkedBy} ${data.markedAt || ''}</div>`;
@@ -235,14 +289,27 @@
             document.getElementById('contentDisplay').value = data.content;
             document.getElementById('fnLabel').innerText = data.title + ".json";
             
+            // Layout Logic
             if(currentMode === 'json' && !isAdmin) {
+                // JSON Mode (Guest): Show folder view, hide editor
                 document.getElementById('contentDisplay').style.display = 'none';
                 document.getElementById('folderView').style.display = 'flex';
+                document.getElementById('copyBtn').style.display = 'none';
+                document.getElementById('mainDownloadBtn').style.display = 'none';
             } else {
+                // Notes Mode or Admin: Show editor and buttons
                 document.getElementById('contentDisplay').style.display = 'block';
                 document.getElementById('folderView').style.display = 'none';
+                document.getElementById('copyBtn').style.display = 'flex';
+                document.getElementById('mainDownloadBtn').style.display = 'flex';
             }
             document.body.classList.add('show-editor');
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
         }
 
         function saveToFirebase() {
@@ -266,13 +333,25 @@
         }
 
         function deleteItem() { if(currentId && confirm("Delete?")) db.ref(`${currentMode}/${currentId}`).remove().then(() => closeEditor()); }
+        
         function downloadFile() {
-            const blob = new Blob([document.getElementById('contentDisplay').value], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = document.getElementById('titleDisplay').value + ".json"; a.click();
+            const text = document.getElementById('contentDisplay').value;
+            const title = document.getElementById('titleDisplay').value || 'file';
+            const blob = new Blob([text], {type:'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = title.endsWith('.json') ? title : title + ".json";
+            a.click();
         }
-        function copyToClipboard() { document.getElementById('contentDisplay').select(); document.execCommand('copy'); alert("Copied!"); }
+
+        function copyToClipboard() { 
+            const text = document.getElementById('contentDisplay').value;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast();
+            });
+        }
         function closeEditor() { document.body.classList.remove('show-editor'); }
     </script>
 </body>
 </html>
+
